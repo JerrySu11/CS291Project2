@@ -10,17 +10,17 @@ def main(event:, context:)
   if event["path"]!='/' && event["path"]!='/token'
     return response(status:404)
   end
-  if body["httpMethod"] == "GET"
-    return GETHandler(body)
-  elsif body["httpMethod"] == "POST"
-    return POSTHandler(body)
+  if event["httpMethod"] == "GET"
+    return GETHandler(event)
+  elsif event["httpMethod"] == "POST"
+    return POSTHandler(event)
   else
     return response(status:405)
   end
 end
 
 def POSTHandler(body)
-  if body["path"]!='/'
+  if body["path"]!='/token'
     return response(status:405) # path is '/token'
   end
   if body["headers"]["Content-Type"]!="application/json"
@@ -35,14 +35,14 @@ def POSTHandler(body)
     }
     token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256'
 
-    return response({"token":token},201)
+    return response(body:{"token":token},status:201)
   rescue JSON::ParserError => e
     return response(status:422)
   end
 end
 
 def GETHandler(body)
-  if body["path"]!="/token"
+  if body["path"]!="/"
     return response(status:405) # path is '/'
   end
   token = body["headers"]["Authorization"] rescue nil
@@ -52,11 +52,13 @@ def GETHandler(body)
   if !(token.match(/^Bearer /))
     return response(status:403)
   end
-  token = JWT.decode token, ENV['JWT_SECRET'], true, { algorithm: 'HS256' }
+  #return response(body:{"token":token[7..-1]},status:200)
+  token = JWT.decode token[7..-1], ENV['JWT_SECRET'], true, { algorithm: 'HS256' }
   payload = token[0]
   if payload['exp'] < Time.now.to_i || payload['nbf']> Time.now.to_i
     return response(status:401)
-  return response(payload['data'],200)
+  end
+  return response(body:payload['data'],status:200)
   
 end
 
