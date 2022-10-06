@@ -28,7 +28,14 @@ def POSTHandler(body)
   end
   begin
     content = JSON.parse(body["body"])
-    return response(body,200)
+    payload = {
+      data: body,
+      exp: Time.now.to_i + 5,
+      nbf: Time.now.to_i + 2
+    }
+    token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256'
+
+    return response({"token":token},201)
   rescue JSON::ParserError => e
     return response(status:422)
   end
@@ -38,7 +45,19 @@ def GETHandler(body)
   if body["path"]!="/token"
     return response(status:405) # path is '/'
   end
-  return response(body,200)
+  token = body["headers"]["Authorization"] rescue nil
+  if token.nil?
+    return response(status:403)
+  end
+  if !(token.match(/^Bearer /))
+    return response(status:403)
+  end
+  token = JWT.decode token, ENV['JWT_SECRET'], true, { algorithm: 'HS256' }
+  payload = token[0]
+  if payload['exp'] < Time.now.to_i || payload['nbf']> Time.now.to_i
+    return response(status:401)
+  return response(payload['data'],200)
+  
 end
 
 def response(body: nil, status: 200)
