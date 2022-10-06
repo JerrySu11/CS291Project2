@@ -52,14 +52,17 @@ def GETHandler(body)
     return response(status:403)
   end
   #return response(body:{"token":token[7..-1]},status:200)
-  token = JWT.decode token[7..-1], ENV['JWT_SECRET'], true, { algorithm: 'HS256' } rescue nil
-  if token.nil?
-    return response(status:403)
-  end
-  payload = token[0]
-  if payload['exp'] < Time.now.to_i || payload['nbf']> Time.now.to_i
+  begin
+    decoded = JWT.decode token[7..-1], ENV['JWT_SECRET'], true, { algorithm: 'HS256' }
+  rescue JWT::ExpiredSignature,JWT::ImmatureSignature
     return response(status:401)
+  rescue => error
+    decoded = nil
   end
+  if decoded.nil?
+    return response(body:{"error":error},status:403)
+  end
+  payload = decoded[0]
   return response(body:payload['data'],status:200)
   
 end
