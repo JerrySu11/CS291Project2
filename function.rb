@@ -26,7 +26,10 @@ def POSTHandler(body)
   if body["headers"]["Content-Type"]!="application/json"
     return response(body:{"type":body["headers"]["Content-Type"]},status:415)
   end
-  content = JSON.parse(body["body"]) rescue nil
+  begin
+    content = JSON.parse(body["body"])
+  rescue
+    content = nil
   if cotent.nil?
     return response(status:422)
   end
@@ -35,12 +38,9 @@ def POSTHandler(body)
     exp: Time.now.to_i + 5,
     nbf: Time.now.to_i + 2
   }
-  token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256' rescue nil
-  if token.nil?
-    return response(status:403)
-  else
-    return response(body:{"token":token},status:201)
-  end
+  token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256'
+  return response(body:{"token":token},status:201)
+  
 end
 
 def GETHandler(body)
@@ -55,7 +55,10 @@ def GETHandler(body)
     return response(status:403)
   end
   #return response(body:{"token":token[7..-1]},status:200)
-  token = JWT.decode token[7..-1], ENV['JWT_SECRET'], true, { algorithm: 'HS256' } rescue nil
+  begin
+    token = JWT.decode token[7..-1], ENV['JWT_SECRET'], true, { algorithm: 'HS256' }
+  rescue
+    token = nil
   if token.nil?
     return response(status:403)
   end
