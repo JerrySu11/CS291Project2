@@ -14,7 +14,7 @@ def main(event:, context:)
     return GETHandler(body)
   elsif body["httpMethod"] == "POST"
     return POSTHandler(body)
-  else:
+  else
     return response(status:405)
   end
 end
