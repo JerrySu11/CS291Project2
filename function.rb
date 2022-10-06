@@ -24,21 +24,19 @@ def POSTHandler(body)
     return response(status:405) # path is '/token'
   end
   if body["headers"]["Content-Type"]!="application/json"
-    return response(status:415)
+    return response(body:body["headers"]["Content-Type"],status:415)
   end
-  begin
-    content = JSON.parse(body["body"])
-    payload = {
-      data: body,
-      exp: Time.now.to_i + 5,
-      nbf: Time.now.to_i + 2
-    }
-    token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256'
-
-    return response(body:{"token":token},status:201)
-  rescue JSON::ParserError => e
+  content = JSON.parse(body["body"]) rescue nil
+  if cotent.nil?
     return response(status:422)
   end
+  payload = {
+    data: content,
+    exp: Time.now.to_i + 5,
+    nbf: Time.now.to_i + 2
+  }
+  token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256'
+  return response(body:{"token":token},status:201)
 end
 
 def GETHandler(body)
