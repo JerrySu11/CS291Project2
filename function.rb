@@ -24,7 +24,7 @@ def POSTHandler(body)
     return response(status:405) # path is '/token'
   end
   if body["headers"]["Content-Type"]!="application/json"
-    return response(body:body["headers"]["Content-Type"],status:415)
+    return response(body:{"type":body["headers"]["Content-Type"]},status:415)
   end
   content = JSON.parse(body["body"]) rescue nil
   if cotent.nil?
@@ -55,7 +55,10 @@ def GETHandler(body)
     return response(status:403)
   end
   #return response(body:{"token":token[7..-1]},status:200)
-  token = JWT.decode token[7..-1], ENV['JWT_SECRET'], true, { algorithm: 'HS256' }
+  token = JWT.decode token[7..-1], ENV['JWT_SECRET'], true, { algorithm: 'HS256' } rescue nil
+  if token.nil?
+    return response(status:403)
+  end
   payload = token[0]
   if payload['exp'] < Time.now.to_i || payload['nbf']> Time.now.to_i
     return response(status:401)
