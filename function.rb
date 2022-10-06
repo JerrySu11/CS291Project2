@@ -35,8 +35,12 @@ def POSTHandler(body)
     exp: Time.now.to_i + 5,
     nbf: Time.now.to_i + 2
   }
-  token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256'
-  return response(body:{"token":token},status:201)
+  token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256' rescue nil
+  if token.nil?
+    return response(status:403)
+  else
+    return response(body:{"token":token},status:201)
+  end
 end
 
 def GETHandler(body)
