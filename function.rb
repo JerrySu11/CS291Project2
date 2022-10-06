@@ -23,7 +23,7 @@ def POSTHandler(body)
   if body["path"]!='/token'
     return response(status:405) # path is '/token'
   end
-  if body["headers"]["Content-Type"]!="application/json"
+  if !body["headers"]["Content-Type"].nil? && body["headers"]["Content-Type"]!="application/json"
     return response(body:{"type":body["headers"]["Content-Type"]},status:415)
   end
   begin
